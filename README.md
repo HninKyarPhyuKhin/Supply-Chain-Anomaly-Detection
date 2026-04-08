@@ -30,7 +30,3 @@ An end-to-end anomaly detection pipeline that scans 1M+ shipment records across 
 ├── styles.css       # Component styles
 └── app.js           # Detection logic, data pipeline, chart rendering
 
-
-## Live Demo
-
-[View Dashboard →](https://hninkyarphyukhin.github.io/supply-chain-anomaly/index.html)
