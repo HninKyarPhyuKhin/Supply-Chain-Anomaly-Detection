@@ -33,4 +33,4 @@ An end-to-end anomaly detection pipeline that scans 1M+ shipment records across 
 
 ## Live Demo
 
-[View Dashboard →](https://HninKyarPhyuKhin.github.io/supply-chain-anomaly/index.html)
+[View Dashboard →](https://hninkyarphyukhin.github.io/supply-chain-anomaly/index.html)
