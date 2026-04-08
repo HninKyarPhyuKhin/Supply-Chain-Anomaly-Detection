@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Supply Chain Anomaly Detection System</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+  <!-- Grid background texture -->
+  <div class="grid-bg"></div>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M3 9 L9 3 L15 9 L9 15 Z" stroke="white" stroke-width="1.5" fill="none"/>
+          <circle cx="9" cy="9" r="2" fill="white"/>
+          <path d="M9 1 L9 3 M9 15 L9 17 M1 9 L3 9 M15 9 L17 9" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">GSCA Detection System</div>
+        <div class="logo-sub">v2.4.1 — anomaly pipeline</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span>LIVE &nbsp;|&nbsp; 1,024,813 records scanned &nbsp;|&nbsp; Last run: 14:32:07 UTC</span>
+    </div>
+  </header>
+
+  <!-- ── Pipeline progress bar ── -->
+  <div class="pipeline-bar">
+    <div class="pipeline-step done">
+      <div class="step-num">✓</div>
+      Data Ingestion
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb1"></div></div>
+
+    <div class="pipeline-step done">
+      <div class="step-num">✓</div>
+      Normalization
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb2"></div></div>
+
+    <div class="pipeline-step done">
+      <div class="step-num">✓</div>
+      Z-Score Analysis
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb3"></div></div>
+
+    <div class="pipeline-step done">
+      <div class="step-num">✓</div>
+      IQR Filtering
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb4"></div></div>
+
+    <div class="pipeline-step active">
+      <div class="step-num">5</div>
+      Flagging &nbsp;<div class="spinner"></div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb5"></div></div>
+
+    <div class="pipeline-step">
+      <div class="step-num">6</div>
+      Report Export
+    </div>
+  </div>
+
+  <!-- ── Main content ── -->
+  <main class="content">
+
+    <!-- KPI cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card danger">
+        <div class="kpi-label">Anomalies Flagged</div>
+        <div class="kpi-value" style="color: var(--danger);" id="counter-anomalies">—</div>
+        <div class="kpi-sub">of 1,024,813 total records</div>
+        <span class="kpi-badge badge-danger" id="kpi-badge-anomalies">HIGH PRIORITY</span>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-label">Est. Financial Risk</div>
+        <div class="kpi-value" style="color: var(--warn);" id="counter-risk">—</div>
+        <div class="kpi-sub">potential logistics losses</div>
+        <span class="kpi-badge badge-warn">CRITICAL</span>
+      </div>
+      <div class="kpi-card success">
+        <div class="kpi-label">Route</div>
+        <div class="kpi-value" style="color: var(--success);" id="kpi-route-label">12 routes</div>
+        <div class="kpi-sub">international corridor active</div>
+        <span class="kpi-badge badge-success">MONITORED</span>
+      </div>
+      <div class="kpi-card info">
+        <div class="kpi-label">Avg Detection Time</div>
+        <div class="kpi-value" style="color: var(--accent);">24s</div>
+        <div class="kpi-sub">to flag per shipment batch</div>
+        <span class="kpi-badge badge-info">FAST</span>
+      </div>
+    </div>
+
+    <!-- Chart + Route list -->
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="panel-title-dot"></div>
+            Anomaly Distribution — by Day of Week
+          </div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">σ threshold: 2.8</div>
+        </div>
+        <div class="panel-body">
+          <div class="chart-wrap">
+            <canvas id="mainChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="panel-title-dot"></div>
+            Routes by Anomaly Count
+          </div>
+        </div>
+        <!-- Populated by app.js → renderRoutes() -->
+        <div id="routeList"></div>
+      </div>
+    </div>
+
+    <!-- Flagged shipments table -->
+    <div class="panel" style="margin-bottom: 1rem;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="panel-title-dot"></div>
+          Flagged Shipment Records
+        </div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted)" id="tableCount">loading…</div>
+      </div>
+
+      <div class="panel-body" style="padding-bottom: 0;">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="Search ID, route, carrier…" id="searchInput" />
+          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('high',this)">High Risk</button>
+          <button class="filter-btn" onclick="setFilter('medium',this)">Medium</button>
+          <button class="filter-btn" onclick="setFilter('low',this)">Low</button>
+          <button class="filter-btn" onclick="setFilter('delay',this)">Delay</button>
+          <button class="filter-btn" onclick="setFilter('cost',this)">Cost Spike</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortTable('id')">Shipment ID ↕</th>
+              <th onclick="sortTable('route')">Route ↕</th>
+              <th onclick="sortTable('carrier')">Carrier ↕</th>
+              <th onclick="sortTable('type')">Anomaly Type ↕</th>
+              <th onclick="sortTable('score')">Z-Score ↕</th>
+              <th onclick="sortTable('risk')">Risk ↕</th>
+              <th onclick="sortTable('value')">Shipment Value ↕</th>
+              <th onclick="sortTable('date')">Flagged ↕</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="padding:10px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);font-family:var(--mono);display:flex;justify-content:space-between;align-items:center;">
+        <span id="pageInfo">—</span>
+        <div style="display:flex;gap:6px;">
+          <button class="filter-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+          <button class="filter-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detection methods + Activity log -->
+    <div class="bottom-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><div class="panel-title-dot"></div>Detection Methods</div>
+        </div>
+        <div class="panel-body">
+          <div class="method-list">
+            <div class="method-item">
+              <div class="method-icon" style="background:rgba(248,113,113,0.15);color:var(--danger)">Z</div>
+              <div>
+                <div class="method-name">Z-Score Analysis</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">Statistical deviation detection</div>
+              </div>
+              <div style="text-align:right">
+                <div class="method-count">89 flags</div>
+                <div class="method-bar"><div class="method-bar-fill" style="width:89%;background:var(--danger)"></div></div>
+              </div>
+            </div>
+            <div class="method-item">
+              <div class="method-icon" style="background:rgba(251,191,36,0.15);color:var(--warn)">IQR</div>
+              <div>
+                <div class="method-name">IQR Outlier Filter</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">Interquartile range fence</div>
+              </div>
+              <div style="text-align:right">
+                <div class="method-count">67 flags</div>
+                <div class="method-bar"><div class="method-bar-fill" style="width:67%;background:var(--warn)"></div></div>
+              </div>
+            </div>
+            <div class="method-item">
+              <div class="method-icon" style="background:rgba(167,139,250,0.15);color:var(--purple)">ISO</div>
+              <div>
+                <div class="method-name">Isolation Forest</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">ML-based anomaly scoring</div>
+              </div>
+              <div style="text-align:right">
+                <div class="method-count">41 flags</div>
+                <div class="method-bar"><div class="method-bar-fill" style="width:41%;background:var(--purple)"></div></div>
+              </div>
+            </div>
+            <div class="method-item">
+              <div class="method-icon" style="background:rgba(52,211,153,0.15);color:var(--success)">MAD</div>
+              <div>
+                <div class="method-name">Median Abs. Deviation</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">Robust central tendency</div>
+              </div>
+              <div style="text-align:right">
+                <div class="method-count">20 flags</div>
+                <div class="method-bar"><div class="method-bar-fill" style="width:20%;background:var(--success)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><div class="panel-title-dot"></div>Recent Activity Log</div>
+        </div>
+        <div class="panel-body">
+          <!-- Populated by app.js → buildActivityLog() -->
+          <div id="activityLog"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Drill-down panel ── -->
+  <aside class="drill-panel" id="drillPanel">
+    <div class="drill-header">
+      <div>
+        <div style="font-size:13px;font-weight:600;" id="drillTitle">Shipment Detail</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);" id="drillId">—</div>
+      </div>
+      <button class="close-btn" onclick="closeDrill()">✕ Close</button>
+    </div>
+    <div class="drill-body" id="drillBody"></div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>
